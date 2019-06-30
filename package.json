@@ -1,0 +1,32 @@
+{
+  "name": "@themecraft/wordpress-latex-math-block",
+  "version": "0.0.1",
+  "description": "WordPress plugin to manage political advertising",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/themecraftstudio/wordpress-latex-math-block.git"
+  },
+  "scripts": {
+    "start": "gulp watch",
+    "build": "gulp"
+  },
+  "author": "Themecraft Studio <info@themecraft.studio> (https://themecraft.studio/)",
+  "license": "UNLICENSED",
+  "devDependencies": {
+    "@types/jquery": "^3.3.29",
+    "@types/katex": "^0.10.1",
+    "@types/node": "^12.0.10",
+    "@types/wordpress__components": "^7.4.2",
+    "@types/wordpress__element": "^2.4.0",
+    "autoprefixer": "^9.5.1",
+    "cssnano": "^4.1.10",
+    "fancy-log": "^1.3.3",
+    "file-set": "^2.0.1",
+    "gulp": "^4.0.0",
+    "gulp-postcss": "^8.0.0",
+    "gulp-sass": "^4.0.2",
+    "gulp-typescript": "^5.0.1",
+    "slugify": "^1.3.4",
+    "typescript": "^3.4.4"
+  }
+}

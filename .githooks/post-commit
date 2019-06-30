@@ -1,0 +1,3 @@
+#!/bin/bash
+PROJECT_DIR="$PWD"
+git describe --dirty --broken --always --tags > "$PROJECT_DIR/.gitversion"

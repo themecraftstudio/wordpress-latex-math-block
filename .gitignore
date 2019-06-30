@@ -1,0 +1,16 @@
+/languages/*.po~
+/languages/*.pot~
+/languages/*.po
+/languages/*.mo
+*.js.map
+.gitversion
+tsconfig.tsbuildinfo
+
+/wp
+node_modules/
+/vendor/
+
+# IDEs
+.idea/
+.vscode/
+.DS_Store

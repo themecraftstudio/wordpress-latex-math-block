@@ -1,0 +1,23 @@
+{
+    "name": "themecraft/wordpress-latex-math-block",
+    "description": "WordPress plugin to manage political advertising",
+    "type": "library",
+    "license": "Proprietary",
+    "authors": [
+        {
+            "name": "Themecraft Studio",
+            "email": "info@themecraft.studio",
+            "homepage": "https://themecraft.studio"
+        }
+    ],
+    "require": {
+        "php": ">=7.2.0"
+    },
+    "require-dev": {
+    },
+    "autoload": {
+        "psr-4": {
+            "Themecraft\\WordPress\\LatexMathBlock\\": "src/"
+        }
+    }
+}
