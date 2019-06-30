@@ -1,12 +1,12 @@
 {
     "compilerOptions": {
-        "incremental": true,
         "target": "es6",
         "suppressImplicitAnyIndexErrors": true,
 		"sourceMap": false,
 		"jsx": "react",
 		"jsxFactory": "wp.element.createElement",
-		"moduleResolution": "node"
+        "moduleResolution": "node",
+        "preserveWatchOutput": true
     },
     "include": [
         "**/*"

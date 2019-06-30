@@ -1,8 +1,12 @@
-// https://developer.wordpress.org/block-editor/tutorials/format-api/3-apply-format/
-// https://github.com/WordPress/gutenberg/tree/39f568faf2e62c57736bb80d7088a996eb067944/packages/rich-text
-// Link https://github.com/WordPress/gutenberg/tree/39f568faf2e62c57736bb80d7088a996eb067944/packages/format-library/src/link
+/**
+ * TODOs
+ *  - capture click on expression / when block is selected and focus the textarea
+ * 
+ * References
+ *  [1] https://developer.wordpress.org/block-editor/tutorials/format-api/3-apply-format/
+ */
 
-const { TextareaControl, CheckboxControl } = wp.components;
+const { TextareaControl, CheckboxControl, Placeholder } = wp.components;
 const { RawHTML } = wp.element;
 const { InspectorControls } = wp.editor;
 
@@ -18,31 +22,29 @@ wp.blocks.registerBlockType('themecraft/latex-math', {
 			type: 'string',
 		}
 	},
-	edit: function(props) {
-        console.debug('Rendering via edit()');
-        
-		let attributes = props.attributes;
-		let setAttributes = props.setAttributes;
+	edit(props) {
+        let { attributes: { expression }, setAttributes } = props;
+        const textArea = [
+            <TextareaControl value={expression} onChange={(v) => { setAttributes({expression: v}) }} />,
+            <div style={{textAlign: 'right', fontSize: '0.7em'}}>
+                <a target="_blank" href="https://katex.org/docs/supported.html#symbols-and-punctuation">Supported functions and symbols</a>
+            </div>
+        ];
 
-		if (!attributes.expression) {
-			return [
-                <div>
-				    <p>Type a latex math expression below</p>
-				    <TextareaControl value="" onChange={(v) => { setAttributes({expression: v}) }}></TextareaControl>
-                </div>
-			];
-        }
+        if (!expression)
+            expression = '\\text{Enter \\LaTeX\\ math expression...}';
 
-        console.debug('LaTeX expression is defined!');
-        
-		let html = '';
-        html = katex.renderToString(attributes.expression, {
+        let renderedExpression = katex.renderToString(expression, {
+            throwOnError: false,
             displayMode: true,
         });
 
 		return [
-            <div id="katex">
-                <RawHTML children={html}></RawHTML>
+            <div className="latex-math">
+                <p className="rendered">
+                    <RawHTML children={renderedExpression}/>
+                </p>
+                { props.isSelected && textArea }
             </div>,
             <InspectorControls>
                 <CheckboxControl 
@@ -50,21 +52,21 @@ wp.blocks.registerBlockType('themecraft/latex-math', {
                     label="tick me" 
                     help="stuff"
                     onChange={console.debug}
-                ></CheckboxControl>
+                />
             </InspectorControls>
 		];
 	},
-	save: function( { attributes } ) {
+	save: function( { attributes: {expression} } ) {
 		// The save function should be a pure function that depends only on the attributes used to invoke it.
-		let html = '';
+		let renderedExpression = '';
 
-		if (attributes.expression) {
-			html = katex.renderToString(attributes.expression, {
+		if (expression) {
+			renderedExpression = katex.renderToString(expression, {
 				throwOnError: false,
 				displayMode: true,
 			});
 		}
 
-		return <RawHTML children={html}></RawHTML>;
+		return <RawHTML children={renderedExpression}></RawHTML>;
 	},
 });

@@ -32,12 +32,14 @@ abstract class WordPressPlugin
     /** @var array Scripts to be registered and enqueued */
     protected $scripts = [];
 
+    /** @var array Styles to be registered and enqueued */
+    protected $stylesheets = [];
+
     /** @var string Version of this plugin */
     protected $version;
 
     /**
      * WordPressPlugin constructor.
-     * @param string $path subdirectory of WP_PLUGIN_DIR
      *
      * Called on plugin activation/loading.
      * This is the config/setup phase. This phase is also *performed during activation*.
@@ -134,17 +136,15 @@ abstract class WordPressPlugin
     }
 
     /**
-     * All non-admin are registered (via wp_register_Script) on 'init',
-     * whereas admin scripts are registered only on 'admin_init'.
+     * Register a script.
      *
      * @param string $handle
      * @param string $relPath
      * @param array $deps
      * @param [type] $version
      * @param boolean $inFooter
-     * @param boolean $admin
      * @param boolean $esModule
-     * @return self
+     * @return static
      */
     public function registerScript(string $handle, string $relPath, array $deps = [], $version = null, bool $inFooter = true, bool $esModule = false): self
     {
@@ -178,7 +178,6 @@ abstract class WordPressPlugin
             'deps' => $deps,
             'version' => $esModule ? null : $version,
             'footer' => $inFooter,
-            // 'admin' => $admin,
             'module' => $esModule,
         ];
 
@@ -192,7 +191,7 @@ abstract class WordPressPlugin
         $this->scripts[$handle] = [
             'path' => $url,
             'deps' => $deps,
-            'version' => false,
+            'version' => null,
             'footer' => $inFooter,
             'module' => $esModule,
             // 'admin' => $admin,
@@ -200,6 +199,50 @@ abstract class WordPressPlugin
 
         return $this;
     }
+
+    /**
+     * Register a stylesheet.
+	 *
+	 * @param string $handle
+	 * @param string $relPath
+	 * @param array $deps
+	 * @param bool $version
+	 * @return static
+	 */
+    public function registerStyle(string $handle, string $relPath, array $deps = [], $version = false): self
+	{
+    	assert(!$this->bootstrapped);
+
+    	// Determine actual path
+        $path = $this->getPath($relPath);
+        
+    	if (!is_file($path))
+			return $this->addAdminNotice(sprintf('Unable to locate stylesheet %s', $path), 'error');
+
+    	if (empty($version))
+    		$version = $this->getVersion();
+
+    	$this->stylesheets[$handle] = [
+    		'path' => $this->getUrl($relPath),
+			'deps' => $deps,
+			'version' => $version,
+		];
+
+    	return $this;
+    }
+    
+    public function registerExternalStyle(string $handle, string $url, array $deps = []): self
+	{
+    	assert(!$this->bootstrapped);
+
+    	$this->stylesheets[$handle] = [
+    		'path' => $url,
+			'deps' => $deps,
+			'version' => null,
+		];
+
+    	return $this;
+	}
 
     /**
      * Enqueues a script on both front and admin.
@@ -212,11 +255,11 @@ abstract class WordPressPlugin
     public function enqueueFrontScript(string $handle): self
     {
         assert(isset($this->scripts[$handle]));
-        assert(!did_action('wp_print_footer_scripts'));
+        assert(!$this->scripts[$handle]['footer'] || !did_action('wp_footer'));
         assert($this->scripts[$handle]['footer'] || !did_action('wp_enqueue_scripts'));
 
         if (isset($this->scripts[$handle]))
-            $this->scripts[$handle]['front'] = true;
+            $this->scripts[$handle]['enqueue_front'] = true;
 
         return $this;
     }
@@ -224,14 +267,37 @@ abstract class WordPressPlugin
     public function enqueueAdminScript(string $handle): self
     {
         assert(isset($this->scripts[$handle]));
-        assert(!did_action('admin_print_footer_scripts'));
+        assert(!$this->scripts[$handle]['footer'] || !did_action('admin_footer'));
         assert($this->scripts[$handle]['footer'] || !did_action('admin_enqueue_scripts'));
 
         if (isset($this->scripts[$handle]))
-            $this->scripts[$handle]['admin'] = true;
+            $this->scripts[$handle]['enqueue_admin'] = true;
 
         return $this;
     }
+
+    public function enqueueFrontStyle(string $handle): self
+	{
+		assert(isset($this->stylesheets[$handle]));
+		assert(!did_action('wp_enqueue_scripts'));
+
+		if (isset($this->stylesheets[$handle]))
+			$this->stylesheets[$handle]['enqueue_front'] = true;
+
+		return $this;
+    }
+    
+    public function enqueueAdminStyle(string $handle): self
+	{
+		assert(isset($this->stylesheets[$handle]));
+		assert(!did_action('admin_enqueue_scripts'));
+
+		if (isset($this->stylesheets[$handle]))
+			$this->stylesheets[$handle]['enqueue_admin'] = true;
+
+		return $this;
+	}
+
 
     public function addAdminNotice(string $message, string $type = 'info', $dismissible = false): self
     {
@@ -280,11 +346,13 @@ abstract class WordPressPlugin
         add_action('init', function () {
             assert( ((bool) did_action('init')) === doing_action('init'));
 
+            $this->registerStyles();
             $this->registerScripts();
         });
 
         add_action('wp_enqueue_scripts', function () {
             // Enqueues front head scripts.
+            $this->enqueueFrontStyles();
             $this->enqueueFrontScripts(false);
         });
         add_action('wp_footer', function () {
@@ -294,6 +362,7 @@ abstract class WordPressPlugin
 
         add_action('admin_enqueue_scripts', function () {
             // Enqueues admin head scripts.
+            $this->enqueueAdminStyles();
             $this->enqueueAdminScripts(false);
         });
         add_action('admin_footer', function () {
@@ -310,10 +379,20 @@ abstract class WordPressPlugin
             wp_register_script($handle, $script['path'], $script['deps'], $script['version'], $script['footer']);
     }
 
+    protected function registerStyles(): void
+    {
+        foreach ($this->stylesheets as $handle => $style)
+            wp_register_style($handle, $style['path'], $style['deps'], $style['version']);
+    }
+
     /**
      * Enqueue scripts based on (footer, front, admin) combination.
-     * 
+     *
      * When both $admin and $front are set, any script is enqueued.
+     *
+     * @param bool $footer
+     * @param bool $front
+     * @param bool $admin
      */
     protected function enqueueScripts(bool $footer, bool $front, bool $admin): void
     {
@@ -321,8 +400,8 @@ abstract class WordPressPlugin
             if ($script['footer'] !== $footer || wp_script_is( $handle, 'enqueued' ))
                 continue;
 
-            if ((isset($script['front']) && $script['front'] === $front) 
-                || (isset($script['admin']) && $script['admin'] === $admin))
+            if ((isset($script['enqueue_front']) && $script['enqueue_front'] === $front) 
+                || (isset($script['enqueue_admin']) && $script['enqueue_admin'] === $admin))
 
                 wp_enqueue_script($handle);
         }
@@ -336,5 +415,29 @@ abstract class WordPressPlugin
     protected function enqueueFrontScripts(bool $footer): void
     {
         $this->enqueueScripts($footer, true, false);
-    }    
+    }
+
+    protected function enqueueStyles(bool $front, bool $admin): void
+    {
+        foreach ($this->stylesheets as $handle => $style) {
+    		if (wp_style_is($handle, 'enqueued'))
+                continue;
+                
+            if ((isset($style['enqueue_front']) && $style['enqueue_front'] === $front)
+                || (isset($style['enqueue_admin']) && $style['enqueue_admin'] === $admin))
+
+                wp_enqueue_style($handle, $style['path'], $style['deps'], $style['version']);
+		}
+
+    }
+
+    protected function enqueueAdminStyles(): void
+    {
+        $this->enqueueStyles(false, true);
+    }
+
+    protected function enqueueFrontStyles(): void
+    {
+        $this->enqueueStyles(true, false);
+    }
 }

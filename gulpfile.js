@@ -17,9 +17,9 @@ const SASS_IMPORTS = [
     // 'node_modules/foundation-sites/scss',
 ];
 const PATHS = {
-    assets: 'assets',
-    styles: 'assets/styles',
-    scripts: 'assets/scripts',
+    assets: 'front',
+    styles: 'front/styles',
+    scripts: 'front/scripts',
     // html: {
     //     root: '../html',
     //     assets: 'assets',
@@ -98,44 +98,15 @@ function styles() {
 exports.styles = styles;
 
 /**
- * Scripts
- */
-// const tsProject = ts.createProject('tsconfig.json');
-// function scripts(done) {
-// 	const typescripts = new FileSet(path.resolve(global.config.getPath('scripts'), '**/*.ts'));
-// 	if (!typescripts.files.length) {
-// 		log.info('No TypeScript scripts to compile');
-// 		return done();
-// 	}
-
-//     return tsProject.src()
-//         //.pipe(sourcemaps.init())
-//         .pipe(tsProject())
-//         //.pipe(sourcemaps.write('.'))
-//         .pipe(dest(global.config.getPath('scripts')));
-// }
-// exports.scripts = scripts;
-
-const blocksProject = ts.createProject('blocks/tsconfig.json');
-function blockScripts(done) {
-    return blocksProject.src()
-        .pipe(blocksProject()).js
-        .pipe(dest('blocks/latex-math/'));
-}
-exports.blockScripts = blockScripts;
-
-
-
-/**
  * Watch for scripts or style changes and compile them.
  */
 exports.watch = () => {
     // watch(global.config.getPath('styles') +'/**/*.scss', {ignoreInitial: false}, styles);
     // watch(global.config.getPath('scripts') +'/**/*.ts', {ignoreInitial: false}, scripts);
-    watch('blocks/**/*.ts*', {ignoreInitial: false}, blockScripts);
+    // watch('blocks/**/*.ts*', {ignoreInitial: false}, blockScripts);
 };
 
 /**
  * Default is to compile both styles and scripts
  */
-exports.default = parallel(blockScripts);
+exports.default = parallel(styles);

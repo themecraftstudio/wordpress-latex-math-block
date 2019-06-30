@@ -1,7 +1,11 @@
-// https://developer.wordpress.org/block-editor/tutorials/format-api/3-apply-format/
-// https://github.com/WordPress/gutenberg/tree/39f568faf2e62c57736bb80d7088a996eb067944/packages/rich-text
-// Link https://github.com/WordPress/gutenberg/tree/39f568faf2e62c57736bb80d7088a996eb067944/packages/format-library/src/link
-const { TextareaControl, CheckboxControl } = wp.components;
+/**
+ * TODOs
+ *  - capture click on expression / when block is selected and focus the textarea
+ *
+ * References
+ *  [1] https://developer.wordpress.org/block-editor/tutorials/format-api/3-apply-format/
+ */
+const { TextareaControl, CheckboxControl, Placeholder } = wp.components;
 const { RawHTML } = wp.element;
 const { InspectorControls } = wp.editor;
 wp.blocks.registerBlockType('themecraft/latex-math', {
@@ -16,38 +20,37 @@ wp.blocks.registerBlockType('themecraft/latex-math', {
             type: 'string',
         }
     },
-    edit: function (props) {
-        console.debug('Rendering via edit()');
-        let attributes = props.attributes;
-        let setAttributes = props.setAttributes;
-        if (!attributes.expression) {
-            return [
-                wp.element.createElement("div", null,
-                    wp.element.createElement("p", null, "Type a latex math expression below"),
-                    wp.element.createElement(TextareaControl, { value: "", onChange: (v) => { setAttributes({ expression: v }); } }))
-            ];
-        }
-        console.debug('LaTeX expression is defined!');
-        let html = '';
-        html = katex.renderToString(attributes.expression, {
+    edit(props) {
+        let { attributes: { expression }, setAttributes } = props;
+        const textArea = [
+            wp.element.createElement(TextareaControl, { value: expression, onChange: (v) => { setAttributes({ expression: v }); } }),
+            wp.element.createElement("div", { style: { textAlign: 'right', fontSize: '0.7em' } },
+                wp.element.createElement("a", { target: "_blank", href: "https://katex.org/docs/supported.html#symbols-and-punctuation" }, "Supported functions and symbols"))
+        ];
+        if (!expression)
+            expression = '\\text{Enter \\LaTeX\\ math expression...}';
+        let renderedExpression = katex.renderToString(expression, {
+            throwOnError: false,
             displayMode: true,
         });
         return [
-            wp.element.createElement("div", { id: "katex" },
-                wp.element.createElement(RawHTML, { children: html })),
+            wp.element.createElement("div", { className: "latex-math" },
+                wp.element.createElement("p", { className: "rendered" },
+                    wp.element.createElement(RawHTML, { children: renderedExpression })),
+                props.isSelected && textArea),
             wp.element.createElement(InspectorControls, null,
                 wp.element.createElement(CheckboxControl, { heading: "Checkbox Field", label: "tick me", help: "stuff", onChange: console.debug }))
         ];
     },
-    save: function ({ attributes }) {
+    save: function ({ attributes: { expression } }) {
         // The save function should be a pure function that depends only on the attributes used to invoke it.
-        let html = '';
-        if (attributes.expression) {
-            html = katex.renderToString(attributes.expression, {
+        let renderedExpression = '';
+        if (expression) {
+            renderedExpression = katex.renderToString(expression, {
                 throwOnError: false,
                 displayMode: true,
             });
         }
-        return wp.element.createElement(RawHTML, { children: html });
+        return wp.element.createElement(RawHTML, { children: renderedExpression });
     },
 });

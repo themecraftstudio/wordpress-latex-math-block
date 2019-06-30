@@ -8,7 +8,8 @@
   },
   "scripts": {
     "start": "gulp watch",
-    "build": "gulp"
+    "build": "gulp",
+    "watch:scripts": "node_modules/.bin/tsc -p blocks/tsconfig.json -w & node_modules/.bin/tsc -p front/scripts/tsconfig.json -w"
   },
   "author": "Themecraft Studio <info@themecraft.studio> (https://themecraft.studio/)",
   "license": "UNLICENSED",

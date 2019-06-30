@@ -1,16 +1,17 @@
 {
   "compilerOptions": {
-    "target": "ES5",
-    "suppressImplicitAnyIndexErrors": true,
-    "sourceMap": false,
-    "downlevelIteration": true
+      "target": "ES6",
+      "suppressImplicitAnyIndexErrors": true,
+      "sourceMap": false,
+      "moduleResolution": "node",
+      "preserveWatchOutput": true
   },
   "include": [
-    "assets/scripts/**/*"
+    "**/*"
   ],
   "exclude": [
-    "node_modules",
     "**/*.spec.ts",
-    "assets/scripts/vendor/**/*"
+    "**/*.test.ts",
+    "vendor/**/*"
   ]
 }
